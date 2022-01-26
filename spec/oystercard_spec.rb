@@ -3,12 +3,15 @@ require 'oystercard'
 describe Oystercard do
 
   let(:station){ double :station } 
+  let(:exitstation){ double :station }
   card = Oystercard.new
   it {is_expected.to respond_to :balance}
 
-  it 'checks balance' do
+  it 'has initial balance and journeys' do
     card = Oystercard.new
+
     expect(card.balance).to eq 0
+    expect(card.journeys).to eq []
   end
 
   it 'can top-up balance' do
@@ -29,7 +32,7 @@ describe Oystercard do
     card = Oystercard.new
     card.top_up(60)
 
-    expect(card.touch_out).to eq "5 deducted from account"
+    expect(card.touch_out(exitstation)).to eq "5 deducted from account"
     expect(card.entry_station).to eq nil
   end
 
@@ -50,20 +53,20 @@ describe Oystercard do
     card = Oystercard.new
     card.top_up(60)
 
-    expect(card.touch_out).to eq "5 deducted from account"
+    expect(card.touch_out(exitstation)).to eq "5 deducted from account"
   end
 
   it 'has a minimum balance of £1' do
     card = Oystercard.new
     
-    expect{card.touch_out}.to raise_error "No minimum balance"
+    expect{card.touch_out(exitstation)}.to raise_error "No minimum balance"
   end
 
   it 'can deduct money on touch out' do
     card = Oystercard.new
     card.top_up(20)
 
-    expect {card.touch_out}.to change{card.balance}.by(-5)
+    expect {card.touch_out(exitstation)}.to change{card.balance}.by(-5)
     
   end
 
@@ -72,6 +75,16 @@ describe Oystercard do
     card.touch_in(station)
 
     expect(card.entry_station). to eq station
+  end
+
+  it 'can save journey on touch out' do
+    card = Oystercard.new
+    card.top_up(20)
+    card.touch_in(station)
+
+    card.touch_out(exitstation)
+
+    expect(card.journeys).to eq [{"in" => station, "out" => exitstation}]
   end
 
 end
